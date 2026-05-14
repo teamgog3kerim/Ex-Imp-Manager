@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "MY EX-IMP MANAGER"
+version = "1.0.0"
+id = "artifacts/eximp-manager"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 24142
+
+[services.development]
+run = "pnpm --filter @workspace/eximp-manager run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/eximp-manager", "run", "build" ]
+publicDir = "artifacts/eximp-manager/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "24142"
+BASE_PATH = "/"

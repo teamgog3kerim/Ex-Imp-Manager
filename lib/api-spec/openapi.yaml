@@ -1,22 +1,29 @@
-openapi: 3.1.0
+openapi: 3.0.3
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: MY EX-IMP MANAGER API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
-    description: Health operations
+  - name: dashboard
+  - name: lc
+  - name: shipments
+  - name: inventory
+  - name: export-lots
+  - name: cad
+  - name: exchange-rates
+  - name: transactions
+  - name: petty-cash
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +31,1196 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── DASHBOARD ──────────────────────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get executive dashboard KPIs and metrics
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent activity feed across all modules
+      responses:
+        "200":
+          description: Activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/trade-volume:
+    get:
+      operationId: getTradeVolume
+      tags: [dashboard]
+      summary: Monthly import/export trade volume for chart
+      responses:
+        "200":
+          description: Trade volume data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TradeVolumePoint"
+
+  # ── LC MANAGEMENT ─────────────────────────────────────────────────────────
+  /lcs:
+    get:
+      operationId: getLcs
+      tags: [lc]
+      summary: List all Letters of Credit
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of LCs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LC"
+    post:
+      operationId: createLc
+      tags: [lc]
+      summary: Open a new Letter of Credit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LCInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LC"
+
+  /lcs/{id}:
+    get:
+      operationId: getLc
+      tags: [lc]
+      summary: Get a single LC
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: LC
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LC"
+    patch:
+      operationId: updateLc
+      tags: [lc]
+      summary: Update an LC
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LCUpdate"
+      responses:
+        "200":
+          description: Updated LC
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LC"
+    delete:
+      operationId: deleteLc
+      tags: [lc]
+      summary: Delete an LC
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /lcs/summary:
+    get:
+      operationId: getLcSummary
+      tags: [lc]
+      summary: LC financial summary and credit utilization
+      responses:
+        "200":
+          description: LC summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LCSummary"
+
+  # ── SHIPMENTS ─────────────────────────────────────────────────────────────
+  /shipments:
+    get:
+      operationId: getShipments
+      tags: [shipments]
+      summary: List all shipments (import and export)
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [import, export]
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Shipment"
+    post:
+      operationId: createShipment
+      tags: [shipments]
+      summary: Create a new shipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShipmentInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+  /shipments/{id}:
+    get:
+      operationId: getShipment
+      tags: [shipments]
+      summary: Get a single shipment with tracking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Shipment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+    patch:
+      operationId: updateShipment
+      tags: [shipments]
+      summary: Update a shipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShipmentUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+
+  # ── INVENTORY ──────────────────────────────────────────────────────────────
+  /inventory:
+    get:
+      operationId: getInventoryItems
+      tags: [inventory]
+      summary: List all inventory items
+      responses:
+        "200":
+          description: List of inventory items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InventoryItem"
+    post:
+      operationId: createInventoryItem
+      tags: [inventory]
+      summary: Create a new inventory item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  /inventory/{id}:
+    patch:
+      operationId: updateInventoryItem
+      tags: [inventory]
+      summary: Update an inventory item
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventoryItem"
+
+  /inventory/summary:
+    get:
+      operationId: getInventorySummary
+      tags: [inventory]
+      summary: Inventory KPIs — total SKUs, warehouses, low-stock count
+      responses:
+        "200":
+          description: Inventory summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InventorySummary"
+
+  # ── SALES ──────────────────────────────────────────────────────────────────
+  /sales:
+    get:
+      operationId: getSales
+      tags: [inventory]
+      summary: List all sales transactions
+      responses:
+        "200":
+          description: List of sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sale"
+    post:
+      operationId: createSale
+      tags: [inventory]
+      summary: Record a new sale
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+
+  # ── EXPORT PURCHASE LOTS ───────────────────────────────────────────────────
+  /export-lots:
+    get:
+      operationId: getExportLots
+      tags: [export-lots]
+      summary: List all export purchase lots
+      parameters:
+        - name: commodity
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Export lots
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExportLot"
+    post:
+      operationId: createExportLot
+      tags: [export-lots]
+      summary: Register a new purchase lot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportLotInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportLot"
+
+  /export-lots/{id}:
+    patch:
+      operationId: updateExportLot
+      tags: [export-lots]
+      summary: Update an export lot
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExportLotUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportLot"
+
+  /export-lots/stock-summary:
+    get:
+      operationId: getExportStockSummary
+      tags: [export-lots]
+      summary: Commodity stock breakdown by type and MT
+      responses:
+        "200":
+          description: Export stock summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportStockSummary"
+
+  # ── CAD MANAGEMENT ─────────────────────────────────────────────────────────
+  /cads:
+    get:
+      operationId: getCads
+      tags: [cad]
+      summary: List all CAD / Export LC records
+      responses:
+        "200":
+          description: List of CADs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CAD"
+    post:
+      operationId: createCad
+      tags: [cad]
+      summary: Create a new CAD
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CADInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CAD"
+
+  /cads/{id}:
+    patch:
+      operationId: updateCad
+      tags: [cad]
+      summary: Update a CAD record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CADUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CAD"
+
+  /cads/payment-summary:
+    get:
+      operationId: getCadPaymentSummary
+      tags: [cad]
+      summary: Export payment totals — received vs outstanding
+      responses:
+        "200":
+          description: Payment summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CADPaymentSummary"
+
+  # ── EXCHANGE RATES ─────────────────────────────────────────────────────────
+  /exchange-rates:
+    get:
+      operationId: getExchangeRates
+      tags: [exchange-rates]
+      summary: List all bank exchange rates (ETB pairs)
+      responses:
+        "200":
+          description: Exchange rates
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExchangeRate"
+    post:
+      operationId: upsertExchangeRate
+      tags: [exchange-rates]
+      summary: Insert or update an exchange rate entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRateInput"
+      responses:
+        "200":
+          description: Upserted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRate"
+
+  /exchange-rates/best:
+    get:
+      operationId: getBestRates
+      tags: [exchange-rates]
+      summary: Best buy/sell rates across all banks for USD/ETB
+      responses:
+        "200":
+          description: Best rates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BestRates"
+
+  # ── TRANSACTIONS / LEDGER ──────────────────────────────────────────────────
+  /transactions:
+    get:
+      operationId: getTransactions
+      tags: [transactions]
+      summary: List all financial transactions
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [import, export, petty]
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+    post:
+      operationId: createTransaction
+      tags: [transactions]
+      summary: Record a new transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /finance/summary:
+    get:
+      operationId: getFinanceSummary
+      tags: [transactions]
+      summary: Full financial overview — bank balances, P&L, obligations
+      responses:
+        "200":
+          description: Finance summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceSummary"
+
+  /finance/cash-flow:
+    get:
+      operationId: getCashFlow
+      tags: [transactions]
+      summary: Monthly cash flow inflow vs outflow for chart
+      responses:
+        "200":
+          description: Cash flow data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CashFlowPoint"
+
+  # ── PETTY CASH ─────────────────────────────────────────────────────────────
+  /petty-cash:
+    get:
+      operationId: getPettyCashEntries
+      tags: [petty-cash]
+      summary: List all petty cash vouchers
+      responses:
+        "200":
+          description: Petty cash entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PettyCashEntry"
+    post:
+      operationId: createPettyCashEntry
+      tags: [petty-cash]
+      summary: Create a new petty cash voucher
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PettyCashInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PettyCashEntry"
+
+  /petty-cash/summary:
+    get:
+      operationId: getPettyCashSummary
+      tags: [petty-cash]
+      summary: Petty cash float summary — balance, disbursed, categories
+      responses:
+        "200":
+          description: Petty cash summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PettyCashSummary"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    # ── DASHBOARD ─────────────────────────────────────────────────────────────
+    DashboardSummary:
+      type: object
+      required: [totalShipments, activeLcs, customsAtRisk, totalRevenue, efficiencyScore, onTimeRate, lcProcessingDays, customsClearanceRate]
+      properties:
+        totalShipments:        { type: integer }
+        activeLcs:             { type: integer }
+        customsAtRisk:         { type: integer }
+        totalRevenue:          { type: number }
+        efficiencyScore:       { type: integer }
+        onTimeRate:            { type: number }
+        lcProcessingDays:      { type: number }
+        customsClearanceRate:  { type: number }
+        shipmentDelayRisk:     { type: number }
+        costOptimization:      { type: number }
+        marketVolatility:      { type: number }
+
+    ActivityItem:
+      type: object
+      required: [id, type, title, description, timestamp, severity]
+      properties:
+        id:          { type: integer }
+        type:        { type: string }
+        title:       { type: string }
+        description: { type: string }
+        timestamp:   { type: string }
+        severity:    { type: string, enum: [info, warning, critical, success] }
+
+    TradeVolumePoint:
+      type: object
+      required: [month, imports, exports]
+      properties:
+        month:   { type: string }
+        imports: { type: number }
+        exports: { type: number }
+
+    # ── LC ────────────────────────────────────────────────────────────────────
+    LC:
+      type: object
+      required: [id, lcNumber, piNumber, supplier, bank, valueUsd, terms, status, openingCostEtb]
+      properties:
+        id:                  { type: integer }
+        lcNumber:            { type: string }
+        piNumber:            { type: string }
+        supplier:            { type: string }
+        bank:                { type: string }
+        valueUsd:            { type: number }
+        terms:               { type: string }
+        marginPct:           { type: number, nullable: true }
+        status:              { type: string, enum: [draft, approved, settled, expired] }
+        openingCostEtb:      { type: number }
+        settlementCostEtb:   { type: number, nullable: true }
+        freightCostEtb:      { type: number, nullable: true }
+        ecNumber:            { type: string, nullable: true }
+        ecExpiry:            { type: string, nullable: true }
+        notes:               { type: string, nullable: true }
+        createdAt:           { type: string }
+
+    LCInput:
+      type: object
+      required: [lcNumber, piNumber, supplier, bank, valueUsd, terms, openingCostEtb]
+      properties:
+        lcNumber:          { type: string }
+        piNumber:          { type: string }
+        supplier:          { type: string }
+        bank:              { type: string }
+        valueUsd:          { type: number }
+        terms:             { type: string }
+        marginPct:         { type: number }
+        status:            { type: string }
+        openingCostEtb:    { type: number }
+        settlementCostEtb: { type: number }
+        freightCostEtb:    { type: number }
+        ecNumber:          { type: string }
+        ecExpiry:          { type: string }
+        notes:             { type: string }
+
+    LCUpdate:
+      type: object
+      properties:
+        supplier:          { type: string }
+        bank:              { type: string }
+        valueUsd:          { type: number }
+        terms:             { type: string }
+        marginPct:         { type: number }
+        status:            { type: string }
+        openingCostEtb:    { type: number }
+        settlementCostEtb: { type: number }
+        freightCostEtb:    { type: number }
+        ecNumber:          { type: string }
+        ecExpiry:          { type: string }
+        notes:             { type: string }
+
+    LCSummary:
+      type: object
+      required: [totalOpened, totalSettled, creditFacility, creditUsed, creditAvailable]
+      properties:
+        totalOpened:      { type: number }
+        totalSettled:     { type: number }
+        creditFacility:   { type: number }
+        creditUsed:       { type: number }
+        creditAvailable:  { type: number }
+        utilizationPct:   { type: number }
+
+    # ── SHIPMENT ──────────────────────────────────────────────────────────────
+    Shipment:
+      type: object
+      required: [id, shipmentRef, type, origin, destination, status, eta]
+      properties:
+        id:           { type: integer }
+        shipmentRef:  { type: string }
+        type:         { type: string, enum: [import, export] }
+        origin:       { type: string }
+        destination:  { type: string }
+        status:       { type: string }
+        eta:          { type: string }
+        blNumber:     { type: string, nullable: true }
+        decNumber:    { type: string, nullable: true }
+        description:  { type: string, nullable: true }
+        progressPct:  { type: integer }
+        vessel:       { type: string, nullable: true }
+        forwarder:    { type: string, nullable: true }
+        freightUsd:   { type: number, nullable: true }
+        linkedLcId:   { type: integer, nullable: true }
+        linkedCadId:  { type: integer, nullable: true }
+        createdAt:    { type: string }
+
+    ShipmentInput:
+      type: object
+      required: [shipmentRef, type, origin, destination, status, eta]
+      properties:
+        shipmentRef:  { type: string }
+        type:         { type: string }
+        origin:       { type: string }
+        destination:  { type: string }
+        status:       { type: string }
+        eta:          { type: string }
+        blNumber:     { type: string }
+        decNumber:    { type: string }
+        description:  { type: string }
+        progressPct:  { type: integer }
+        vessel:       { type: string }
+        forwarder:    { type: string }
+        freightUsd:   { type: number }
+        linkedLcId:   { type: integer }
+        linkedCadId:  { type: integer }
+
+    ShipmentUpdate:
+      type: object
+      properties:
+        status:       { type: string }
+        eta:          { type: string }
+        progressPct:  { type: integer }
+        blNumber:     { type: string }
+        decNumber:    { type: string }
+        vessel:       { type: string }
+        forwarder:    { type: string }
+        freightUsd:   { type: number }
+
+    # ── INVENTORY ─────────────────────────────────────────────────────────────
+    InventoryItem:
+      type: object
+      required: [id, invId, product, shipmentRef, quantity, warehouse, status, unitPriceEtb, landedCostEtb]
+      properties:
+        id:              { type: integer }
+        invId:           { type: string }
+        product:         { type: string }
+        description:     { type: string, nullable: true }
+        shipmentRef:     { type: string }
+        quantity:        { type: integer }
+        warehouse:       { type: string }
+        status:          { type: string, enum: [in_stock, low_stock, reserved, out_of_stock] }
+        unitPriceEtb:    { type: number }
+        landedCostEtb:   { type: number }
+        totalValueEtb:   { type: number }
+        salesPriceEtb:   { type: number, nullable: true }
+        notes:           { type: string, nullable: true }
+        createdAt:       { type: string }
+
+    InventoryInput:
+      type: object
+      required: [invId, product, shipmentRef, quantity, warehouse, unitPriceEtb, landedCostEtb]
+      properties:
+        invId:           { type: string }
+        product:         { type: string }
+        description:     { type: string }
+        shipmentRef:     { type: string }
+        quantity:        { type: integer }
+        warehouse:       { type: string }
+        status:          { type: string }
+        unitPriceEtb:    { type: number }
+        landedCostEtb:   { type: number }
+        salesPriceEtb:   { type: number }
+        notes:           { type: string }
+
+    InventoryUpdate:
+      type: object
+      properties:
+        quantity:        { type: integer }
+        warehouse:       { type: string }
+        status:          { type: string }
+        unitPriceEtb:    { type: number }
+        salesPriceEtb:   { type: number }
+        notes:           { type: string }
+
+    InventorySummary:
+      type: object
+      required: [totalSkus, warehouseCount, lowStockCount, totalValueEtb]
+      properties:
+        totalSkus:       { type: integer }
+        warehouseCount:  { type: integer }
+        lowStockCount:   { type: integer }
+        totalValueEtb:   { type: number }
+
+    # ── SALES ─────────────────────────────────────────────────────────────────
+    Sale:
+      type: object
+      required: [id, saleId, customer, inventoryItemId, product, quantity, amountEtb, date, paymentStatus]
+      properties:
+        id:              { type: integer }
+        saleId:          { type: string }
+        customer:        { type: string }
+        inventoryItemId: { type: integer }
+        product:         { type: string }
+        quantity:        { type: integer }
+        amountEtb:       { type: number }
+        date:            { type: string }
+        paymentStatus:   { type: string, enum: [paid, pending, invoiced] }
+
+    SaleInput:
+      type: object
+      required: [customer, inventoryItemId, product, quantity, amountEtb, date, paymentStatus]
+      properties:
+        customer:        { type: string }
+        inventoryItemId: { type: integer }
+        product:         { type: string }
+        quantity:        { type: integer }
+        amountEtb:       { type: number }
+        date:            { type: string }
+        paymentStatus:   { type: string }
+
+    # ── EXPORT LOT ────────────────────────────────────────────────────────────
+    ExportLot:
+      type: object
+      required: [id, lotId, commodity, grade, origin, quantityMt, bags, priceEtbPerKg, warehouse, status]
+      properties:
+        id:               { type: integer }
+        lotId:            { type: string }
+        ecxReference:     { type: string, nullable: true }
+        commodity:        { type: string }
+        grade:            { type: string }
+        origin:           { type: string }
+        processingMethod: { type: string, nullable: true }
+        quantityMt:       { type: number }
+        bags:             { type: integer }
+        priceEtbPerKg:    { type: number }
+        totalCostEtb:     { type: number }
+        warehouse:        { type: string }
+        status:           { type: string, enum: [raw, processing, grading, awaiting_qc, ready_to_ship, shipped] }
+        phytoExpiry:      { type: string, nullable: true }
+        certifications:   { type: string, nullable: true }
+        fobPriceUsdMt:    { type: number, nullable: true }
+        estimatedFobUsd:  { type: number, nullable: true }
+        createdAt:        { type: string }
+
+    ExportLotInput:
+      type: object
+      required: [lotId, commodity, grade, origin, quantityMt, bags, priceEtbPerKg, warehouse]
+      properties:
+        lotId:            { type: string }
+        ecxReference:     { type: string }
+        commodity:        { type: string }
+        grade:            { type: string }
+        origin:           { type: string }
+        processingMethod: { type: string }
+        quantityMt:       { type: number }
+        bags:             { type: integer }
+        priceEtbPerKg:    { type: number }
+        warehouse:        { type: string }
+        status:           { type: string }
+        phytoExpiry:      { type: string }
+        certifications:   { type: string }
+        fobPriceUsdMt:    { type: number }
+
+    ExportLotUpdate:
+      type: object
+      properties:
+        status:           { type: string }
+        warehouse:        { type: string }
+        quantityMt:       { type: number }
+        priceEtbPerKg:    { type: number }
+        phytoExpiry:      { type: string }
+        fobPriceUsdMt:    { type: number }
+
+    ExportStockSummary:
+      type: object
+      required: [coffeeMt, oilseedsMt, pulsesMt, totalPurchaseValueEtb]
+      properties:
+        coffeeMt:              { type: number }
+        oilseedsMt:            { type: number }
+        pulsesMt:              { type: number }
+        totalPurchaseValueEtb: { type: number }
+        breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/CommodityBreakdown"
+
+    CommodityBreakdown:
+      type: object
+      required: [commodity, quantityMt, valueEtb]
+      properties:
+        commodity:   { type: string }
+        quantityMt:  { type: number }
+        valueEtb:    { type: number }
+
+    # ── CAD ───────────────────────────────────────────────────────────────────
+    CAD:
+      type: object
+      required: [id, cadRef, cadType, buyer, buyerCountry, destination, commodity, fobUsd, paymentTerms, status]
+      properties:
+        id:               { type: integer }
+        cadRef:           { type: string }
+        cadType:          { type: string }
+        buyer:            { type: string }
+        buyerCountry:     { type: string }
+        destination:      { type: string }
+        commodity:        { type: string }
+        quantityMt:       { type: number, nullable: true }
+        fobUsd:           { type: number }
+        etbEquiv:         { type: number, nullable: true }
+        usdRetained:      { type: number, nullable: true }
+        etbConverted:     { type: number, nullable: true }
+        paymentTerms:     { type: string }
+        dueDate:          { type: string, nullable: true }
+        receivedDate:     { type: string, nullable: true }
+        status:           { type: string, enum: [active, docs_submitted, negotiating, awaiting_payment, received, docs_incomplete] }
+        linkedLotId:      { type: integer, nullable: true }
+        linkedShipmentId: { type: integer, nullable: true }
+        missingDocs:      { type: string, nullable: true }
+        createdAt:        { type: string }
+
+    CADInput:
+      type: object
+      required: [cadRef, cadType, buyer, buyerCountry, destination, commodity, fobUsd, paymentTerms]
+      properties:
+        cadRef:           { type: string }
+        cadType:          { type: string }
+        buyer:            { type: string }
+        buyerCountry:     { type: string }
+        destination:      { type: string }
+        commodity:        { type: string }
+        quantityMt:       { type: number }
+        fobUsd:           { type: number }
+        paymentTerms:     { type: string }
+        dueDate:          { type: string }
+        status:           { type: string }
+        linkedLotId:      { type: integer }
+        linkedShipmentId: { type: integer }
+        missingDocs:      { type: string }
+
+    CADUpdate:
+      type: object
+      properties:
+        status:           { type: string }
+        dueDate:          { type: string }
+        receivedDate:     { type: string }
+        etbEquiv:         { type: number }
+        usdRetained:      { type: number }
+        etbConverted:     { type: number }
+        missingDocs:      { type: string }
+
+    CADPaymentSummary:
+      type: object
+      required: [totalFobUsd, receivedUsd, outstandingUsd, usdRetained, etbConverted, activeCads, pendingPayment, paymentsReceived]
+      properties:
+        totalFobUsd:      { type: number }
+        receivedUsd:      { type: number }
+        outstandingUsd:   { type: number }
+        usdRetained:      { type: number }
+        etbConverted:     { type: number }
+        activeCads:       { type: integer }
+        pendingPayment:   { type: integer }
+        paymentsReceived: { type: integer }
+
+    # ── EXCHANGE RATES ────────────────────────────────────────────────────────
+    ExchangeRate:
+      type: object
+      required: [id, bank, currency, buyRate, sellRate, updatedAt]
+      properties:
+        id:        { type: integer }
+        bank:      { type: string }
+        currency:  { type: string }
+        buyRate:   { type: number }
+        sellRate:  { type: number }
+        spread:    { type: number }
+        updatedAt: { type: string }
+
+    ExchangeRateInput:
+      type: object
+      required: [bank, currency, buyRate, sellRate]
+      properties:
+        bank:     { type: string }
+        currency: { type: string }
+        buyRate:  { type: number }
+        sellRate: { type: number }
+
+    BestRates:
+      type: object
+      required: [bestBuyRate, bestBuyBank, bestSellRate, bestSellBank, averageRate, monitoredBanks]
+      properties:
+        bestBuyRate:    { type: number }
+        bestBuyBank:    { type: string }
+        bestSellRate:   { type: number }
+        bestSellBank:   { type: string }
+        averageRate:    { type: number }
+        monitoredBanks: { type: integer }
+
+    # ── TRANSACTIONS ──────────────────────────────────────────────────────────
+    Transaction:
+      type: object
+      required: [id, description, date, type, amountEtb, direction, status]
+      properties:
+        id:          { type: integer }
+        description: { type: string }
+        date:        { type: string }
+        type:        { type: string, enum: [import, export, petty] }
+        amountEtb:   { type: number }
+        direction:   { type: string, enum: [in, out] }
+        status:      { type: string, enum: [completed, processing, pending] }
+        reference:   { type: string, nullable: true }
+        bank:        { type: string, nullable: true }
+
+    TransactionInput:
+      type: object
+      required: [description, date, type, amountEtb, direction, status]
+      properties:
+        description: { type: string }
+        date:        { type: string }
+        type:        { type: string }
+        amountEtb:   { type: number }
+        direction:   { type: string }
+        status:      { type: string }
+        reference:   { type: string }
+        bank:        { type: string }
+
+    FinanceSummary:
+      type: object
+      required: [mainAccountEtb, lcCreditFacilityUsd, lcCreditUsedUsd, importPayablesEtb, exportReceivablesUsd, inventoryValueEtb, totalSalesEtb, netProfitMargin, netProfitEtb]
+      properties:
+        mainAccountEtb:        { type: number }
+        lcCreditFacilityUsd:   { type: number }
+        lcCreditUsedUsd:       { type: number }
+        nbeRetentionUsd:       { type: number }
+        importPayablesEtb:     { type: number }
+        exportReceivablesUsd:  { type: number }
+        inventoryValueEtb:     { type: number }
+        totalSalesEtb:         { type: number }
+        netProfitMargin:       { type: number }
+        netProfitEtb:          { type: number }
+        upcomingObligations:
+          type: array
+          items:
+            $ref: "#/components/schemas/UpcomingObligation"
+
+    UpcomingObligation:
+      type: object
+      required: [label, amount, currency, dueDate, severity]
+      properties:
+        label:    { type: string }
+        amount:   { type: number }
+        currency: { type: string }
+        dueDate:  { type: string }
+        severity: { type: string, enum: [high, medium, low] }
+
+    CashFlowPoint:
+      type: object
+      required: [month, inflow, outflow]
+      properties:
+        month:   { type: string }
+        inflow:  { type: number }
+        outflow: { type: number }
+
+    # ── PETTY CASH ────────────────────────────────────────────────────────────
+    PettyCashEntry:
+      type: object
+      required: [id, voucherNumber, date, description, category, requestedBy, approvedBy, amountEtb, balanceAfterEtb, receiptStatus]
+      properties:
+        id:              { type: integer }
+        voucherNumber:   { type: string }
+        date:            { type: string }
+        description:     { type: string }
+        category:        { type: string }
+        requestedBy:     { type: string }
+        approvedBy:      { type: string }
+        amountEtb:       { type: number }
+        balanceAfterEtb: { type: number }
+        receiptStatus:   { type: string, enum: [attached, pending, none] }
+
+    PettyCashInput:
+      type: object
+      required: [date, description, category, requestedBy, amountEtb]
+      properties:
+        voucherNumber: { type: string }
+        date:          { type: string }
+        description:   { type: string }
+        category:      { type: string }
+        requestedBy:   { type: string }
+        approvedBy:    { type: string }
+        amountEtb:     { type: number }
+        receiptRef:    { type: string }
+        receiptStatus: { type: string }
+
+    PettyCashSummary:
+      type: object
+      required: [openingBalance, totalDisbursed, replenishments, closingBalance, ceiling, maxPerVoucher]
+      properties:
+        openingBalance:   { type: number }
+        totalDisbursed:   { type: number }
+        replenishments:   { type: number }
+        closingBalance:   { type: number }
+        ceiling:          { type: number }
+        maxPerVoucher:    { type: number }
+        replenishTrigger: { type: number }
+        categoryBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/PettyCashCategory"
+
+    PettyCashCategory:
+      type: object
+      required: [category, amountEtb]
+      properties:
+        category:  { type: string }
+        amountEtb: { type: number }
